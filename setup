@@ -49,19 +49,23 @@ function build_bin() {
   golangci-lint run
 
   echo "[*] Binary for ${service_name}linux ready at ./${service_name}"
-  GOOS=linux GOARCH=amd64 go build -o frpc_linux_amd64 ./cmd/frpc
+  GOOS=linux GOARCH=amd64 go build -o tessell-frpc-linux-amd64 ./cmd/frpc
+  tar cf tessell-frpc-linux-amd64.tar tessell-frpc-linux-amd64
   echo "[*] Binary for ${service_name}linux ready at ./${service_name}"
 
   echo "[*] Binary for ${service_name}darwin ready at ./${service_name}"
-  GOOS=darwin GOARCH=amd64 go build -o frpc_darwin_amd64 ./cmd/frpc
+  GOOS=darwin GOARCH=amd64 go build -o tessell-frpc-darwin-amd64 ./cmd/frpc
+  tar cf tessell-frpc-darwin-amd64.tar tessell-frpc-darwin-amd64
   echo "[*] Binary for ${service_name}darwin ready at ./${service_name}"
 
   echo "[*] Binary for ${service_name}windows ready at ./${service_name}"
-  GOOS=windows GOARCH=amd64 go build -o frpc_windows_amd64 ./cmd/frpc
+  GOOS=windows GOARCH=amd64 go build -o tessell-frpc-windows-amd64 ./cmd/frpc
+  tar cf tessell-frpc-windows-amd64.tar tessell-frpc-windows-amd64
   echo "[*] Binary for ${service_name}windows ready at ./${service_name}"
 
   echo "[*] Binary for frps_linux ready at ./${service_name}"
-  GOOS=linux GOARCH=amd64 go build -o frps_linux_amd64 ./cmd/frps
+  GOOS=linux GOARCH=amd64 go build -o tessell-frps-linux-amd64 ./cmd/frps
+  tar cf tessell-frps-linux-amd64.tar tessell-frps-linux-amd64
   echo "[*] Binary for frps_linux ready at ./${service_name}"
 }
 

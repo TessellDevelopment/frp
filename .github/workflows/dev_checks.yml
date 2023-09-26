@@ -1,0 +1,15 @@
+---
+name: Best Practices Check
+on:
+  pull_request:
+    branches:
+      - 'main'
+      - 'rel-*'
+      - 'TS-*' 
+      - 'TDEVOPS-*'
+      - 'revert-*'
+
+jobs:
+  dev-checks:
+    uses: TessellDevelopment/tessell-ci/.github/workflows/dev-checks.yml@main
+    secrets: inherit

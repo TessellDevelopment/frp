@@ -1,0 +1,10 @@
+artifactType: zip
+version: 0.1.0
+nexusUrl: "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/{{ artifactName }}/{{ version }}/{{ artifactName }}-{{ version }}.tar"
+s3Url: "s3://{{ libraryConfigBucketName }}/{{ globalDeploymentName }}/{{ artifactName }}/{{ version }}/{{ artifactName }}-{{ version }}.tar"
+artifactNames: ["tessell-frpc-linux-amd64","tessell-frpc-darwin-amd64","tessell-frpc-windows-amd64","tessell-frps-linux-amd64"]
+ci:
+  best-practices:
+     jiraValidation: 
+       jiraIdSource: BRANCH_NAME_PREFIX
+       matchingRule: ALL
