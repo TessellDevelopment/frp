@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+[[ $@ =~ (^| )-d( |$) ]] && set -x || :
+
+for i in GITHUB_USER GITHUB_TOKEN GOPATH; do
+  [[ -n ${!i:-} ]] || {
+    [[ ${i} == GITHUB_USER && -n ${GITHUB_USERNAME} ]] && GITHUB_USER=${GITHUB_USERNAME} && continue
+    [[ ${i} == GITHUB_TOKEN && -n ${GITHUB_PASSWORD} ]] && GITHUB_TOKEN=${GITHUB_PASSWORD} && continue
+    echo "${i} is not defined."; exit 1;
+  }
+done
+
+setup_yaml=`cat setup.yaml | yq '... comments=""'`
+
+function get_config() {
+  if [[ -n "${1:-}" ]]; then
+    if [[ -z "${2:-}" ]]; then
+      yq "${1}" <<<${setup_yaml} 2>/dev/null || return 1
+    else
+      yq "${1} // \"${2}\"" <<<${setup_yaml} 2>/dev/null
+    fi
+  else
+    return 1
+  fi
+}
+
+build_binary=false
+
+service_name=$(get_config .service-name)
+
+function go_fmt() {
+  go fmt ./...
+  goimports -w .
+}
+
+function build_bin() {
+  echo "[*] Building ${service_name} binary"
+  go mod tidy
+  go_fmt
+  go get -u github.com/quic-go/quic-go
+  go clean -modcache
+  go get -u github.com/go-playground/validator/v10@v10.14.1
+  go mod tidy
+
+  go get -u github.com/securego/gosec/v2/cmd/gosec
+  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+  golangci-lint run
+
+  echo "[*] Binary for ${service_name}linux ready at ./${service_name}"
+  GOOS=linux GOARCH=amd64 go build -o frpc_linux_amd64 ./cmd/frpc
+  echo "[*] Binary for ${service_name}linux ready at ./${service_name}"
+
+  echo "[*] Binary for ${service_name}darwin ready at ./${service_name}"
+  GOOS=darwin GOARCH=amd64 go build -o frpc_darwin_amd64 ./cmd/frpc
+  echo "[*] Binary for ${service_name}darwin ready at ./${service_name}"
+
+  echo "[*] Binary for ${service_name}windows ready at ./${service_name}"
+  GOOS=windows GOARCH=amd64 go build -o frpc_windows_amd64 ./cmd/frpc
+  echo "[*] Binary for ${service_name}windows ready at ./${service_name}"
+
+  echo "[*] Binary for frps_linux ready at ./${service_name}"
+  GOOS=linux GOARCH=amd64 go build -o frps_linux_amd64 ./cmd/frps
+  echo "[*] Binary for frps_linux ready at ./${service_name}"
+}
+
+
+function cleanup() {
+  echo "[*] Cleaning up all generated code and downloaded artifacts."
+  cd ${clients_dir}
+  for d in `ls`; do rm -rf ${script_dir}/${d}; done
+  cd - &>/dev/null
+  rm -rf ${build_dir} vendor server
+}
+
+# Main execution
+if [[ $@ =~ (^| )--(cln|clean|cleanup)( |$) ]]; then
+  cleanup
+fi
+
+while [[ $# -gt 0 ]]; do
+  case "${1}" in
+    -b|--binary)
+      build_binary=true
+      ;;
+    --nc|--no-cache)
+      no_cache=--no-cache
+      ;;
+    --cln|--clean|--cleanup)
+      :
+      ;;
+    -d)
+      :
+      ;;
+    *)
+      echo "Encountered unexpected parameter"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+if ${build_binary}; then
+  build_bin
+fi
